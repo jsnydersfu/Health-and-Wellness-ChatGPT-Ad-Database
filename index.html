@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Health and Wellness ChatGPT Ad Database</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --ink:#1a1d21; --muted:#6b7280;
+    --line:#e5e7eb; --accent:#10a37f; --accent-ink:#0b7a5f; --chip:#eef2f5;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#14171a; --card:#1d2125; --ink:#e8eaed; --muted:#9aa3ad;
+      --line:#2b3138; --accent:#19b892; --accent-ink:#8be0cf; --chip:#262c33;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  header{padding:22px 16px 8px;max-width:1200px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+  .controls{position:sticky;top:0;z-index:10;background:var(--bg);
+    padding:10px 16px;border-bottom:1px solid var(--line)}
+  .controls .inner{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  input[type=search],select{font:14px inherit;padding:8px 10px;border:1px solid var(--line);
+    border-radius:8px;background:var(--card);color:var(--ink)}
+  input[type=search]{flex:1;min-width:200px}
+  .count{color:var(--muted);font-size:13px;margin-left:auto;white-space:nowrap}
+  main{max-width:1200px;margin:0 auto;padding:16px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+    cursor:pointer;display:flex;flex-direction:column;transition:border-color .15s}
+  .card:hover{border-color:var(--accent)}
+  .thumb{width:100%;aspect-ratio:2/1;object-fit:contain;display:block;background:var(--chip);
+    border-bottom:1px solid var(--line)}
+  .card .body{padding:10px 12px}
+  .adv{font-weight:600;font-size:14px;margin:0 0 3px}
+  .meta{color:var(--muted);font-size:12px;margin:0 0 6px;display:flex;gap:8px;flex-wrap:wrap}
+  .chip{background:var(--chip);border-radius:999px;padding:1px 8px;font-size:11px;color:var(--muted)}
+  .prompt{font-size:13px;margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .site{display:inline-block;margin-top:7px;font-size:12px;color:var(--accent-ink);text-decoration:none;
+    max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .site:hover{text-decoration:underline}
+  mark{background:#ffe58a;color:inherit;padding:0 1px;border-radius:2px}
+  .empty{color:var(--muted);text-align:center;padding:60px 20px}
+  /* modal */
+  .ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-start;
+    justify-content:center;padding:24px 16px;z-index:50;overflow:auto}
+  .ov.open{display:flex}
+  .modal{background:var(--card);border-radius:14px;max-width:860px;width:100%;overflow:hidden}
+  .modal img{width:100%;display:block;background:var(--chip)}
+  .modal .pad{padding:16px 18px}
+  .modal h2{font-size:18px;margin:0 0 2px}
+  .kv{margin:12px 0 0}
+  .kv .lab{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:10px 0 2px}
+  .kv .val{font-size:14px;white-space:pre-wrap;word-break:break-word}
+  .kv a{color:var(--accent-ink);word-break:break-all}
+  .x{position:sticky;top:0;float:right;margin:8px;background:var(--card);border:1px solid var(--line);
+    border-radius:8px;width:34px;height:34px;font-size:18px;cursor:pointer;color:var(--ink)}
+  footer{max-width:1200px;margin:0 auto;padding:24px 16px;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Health and Wellness ChatGPT Ad Database</h1>
+  <p class="sub">A searchable archive of advertisements observed in ChatGPT's free tier in response to wellness products associated with complementary and alternative cancer care. Each entry records the ad image, advertiser, the prompt used, ChatGPT's response, and the collection date.</p>
+</header>
+
+<div class="controls">
+  <div class="inner">
+    <input type="search" id="q" placeholder="Search advertiser, ad text, prompt, or URL…" autocomplete="off">
+    <select id="sort" title="Sort">
+      <option value="date_desc">Newest first</option>
+      <option value="date_asc">Oldest first</option>
+      <option value="adv_asc">Advertiser A–Z</option>
+      <option value="adv_desc">Advertiser Z–A</option>
+    </select>
+    <select id="loc" title="Location"><option value="">All locations</option></select>
+    <span class="count" id="count"></span>
+  </div>
+</div>
+
+<main>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" hidden>No ads match your search.</div>
+</main>
+
+<footer id="foot"></footer>
+
+<div class="ov" id="ov">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+let DATA=[], view=[];
+const $=s=>document.querySelector(s);
+const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const host=u=>{try{return new URL(u).hostname.replace(/^www\./,"");}catch(e){return u;}};
+const LOCCOL={"Dublin":["#cdebd6","#176b3a"],"London":["#d2e4fb","#1c4e8a"],
+  "New York":["#e4d6f5","#5b2a86"],"Sydney":["#fde8c8","#8a5a12"],"Toronto":["#fbd5d5","#9a2a2a"]};
+const locStyle=l=>{const c=LOCCOL[l];return c?`background:${c[0]};color:${c[1]}`:"";};
+
+function hl(text, q){
+  text=esc(text);
+  if(!q) return text;
+  const re=new RegExp("("+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+")","ig");
+  return text.replace(re,"<mark>$1</mark>");
+}
+
+function render(){
+  const q=$("#q").value.trim().toLowerCase();
+  const loc=$("#loc").value;
+  const sort=$("#sort").value;
+  view=DATA.filter(e=>{
+    if(loc && e.location!==loc) return false;
+    if(!q) return true;
+    return (e.advertiser.toLowerCase().includes(q) ||
+            e.adText.toLowerCase().includes(q) ||
+            e.prompt.toLowerCase().includes(q) ||
+            e.url.toLowerCase().includes(q));
+  });
+  view.sort((a,b)=>{
+    if(sort==="date_desc") return b.ts.localeCompare(a.ts);
+    if(sort==="date_asc")  return a.ts.localeCompare(b.ts);
+    const c=a.advertiser.toLowerCase().localeCompare(b.advertiser.toLowerCase());
+    return sort==="adv_desc"? -c : c;
+  });
+  const g=$("#grid");
+  g.innerHTML = view.map(e=>`
+    <article class="card" data-id="${e.id}">
+      <img class="thumb" loading="lazy" src="images/${encodeURIComponent(e.img)}" alt=""
+           onerror="this.style.opacity=.3;this.alt='image missing'">
+      <div class="body">
+        <p class="adv">${hl(e.advertiser,q)||'<span style="color:var(--muted)">(no advertiser)</span>'}</p>
+        <p class="meta">${e.location?`<span class="chip" style="${locStyle(e.location)}">${esc(e.location)}</span>`:''}<span>${e.date}</span></p>
+        <p class="prompt">${hl(e.prompt,q)}</p>
+        ${e.url?`<a class="site" href="${esc(e.url)}" target="_blank" rel="noopener nofollow" onclick="event.stopPropagation()">${esc(host(e.url))} ↗</a>`:''}
+      </div>
+    </article>`).join("");
+  $("#empty").hidden = view.length>0;
+  $("#count").textContent = view.length===DATA.length
+    ? `${DATA.length} ads` : `${view.length} of ${DATA.length} ads`;
+}
+
+function openModal(e){
+  const m=$("#modal");
+  m.innerHTML=`
+    <button class="x" id="xbtn" aria-label="Close">×</button>
+    <img src="images/${encodeURIComponent(e.img)}" alt="" onerror="this.style.minHeight='0';this.alt='image missing'">
+    <div class="pad">
+      <h2>${esc(e.advertiser)||'(no advertiser)'}</h2>
+      <p class="meta">${e.location?`<span class="chip" style="${locStyle(e.location)}">${esc(e.location)}</span>`:''}<span>${e.date}</span>${e.run?`<span class="chip">${esc(e.run)}</span>`:''}</p>
+      <div class="kv">
+        <div class="lab">Prompt</div><div class="val">${esc(e.prompt)}</div>
+        ${e.adText?`<div class="lab">Ad text</div><div class="val">${esc(e.adText)}</div>`:''}
+        ${e.url?`<div class="lab">Ad landing URL</div><div class="val"><a href="${esc(e.url)}" target="_blank" rel="noopener nofollow">${esc(e.url)}</a></div>`:''}
+        <div class="lab">ChatGPT response</div><div class="val">${esc(e.response)}</div>
+        <div class="lab">Image file</div><div class="val">${esc(e.img)}</div>
+      </div>
+    </div>`;
+  $("#ov").classList.add("open");
+  document.body.style.overflow="hidden";
+  $("#xbtn").onclick=closeModal;
+}
+function closeModal(){$("#ov").classList.remove("open");document.body.style.overflow="";}
+
+document.addEventListener("click",ev=>{
+  const card=ev.target.closest(".card");
+  if(card){const e=DATA.find(x=>x.id==card.dataset.id); if(e) openModal(e);}
+  if(ev.target.id==="ov") closeModal();
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
+["#q","#sort","#loc"].forEach(s=>$(s).addEventListener("input",render));
+
+fetch("data.json").then(r=>r.json()).then(d=>{
+  DATA=d;
+  const locs=[...new Set(d.map(e=>e.location).filter(Boolean))].sort();
+  $("#loc").insertAdjacentHTML("beforeend",
+    locs.map(l=>`<option value="${esc(l)}">${esc(l)}</option>`).join(""));
+  $("#foot").textContent="679 ads, 155 advertisers, collected 09-28-2026 to 10-09-2026. Research archive. Advertiser names and ad creatives are the property of their respective owners. Reproduced for non-commercial content-analysis research.";
+  render();
+}).catch(err=>{
+  $("#grid").innerHTML=`<div class="empty">Couldn't load data.json.<br>If opening locally, use a local server (see README) — browsers block fetch() from file://.</div>`;
+});
+</script>
+</body>
+</html>
